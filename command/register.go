@@ -2,6 +2,7 @@ package command
 
 import (
 	"fmt"
+	"github.com/hello/sense/sense"
 	"github.com/mitchellh/cli"
 	"strings"
 )
@@ -29,14 +30,37 @@ func (c *RegisterCommand) Run(args []string) int {
 		return 1
 	}
 
-	client, err := AuthenticatedSenseClient(true)
+	email, err := c.Ui.Ask("Email: ")
+
+	if err != nil {
+		c.Ui.Error(fmt.Sprintf("Error reading email from prompt: %s", err))
+		return 1
+	}
+
+	name, err := c.Ui.Ask("Name: ")
+
+	if err != nil {
+		c.Ui.Error(fmt.Sprintf("Error reading name from prompt: %s", err))
+		return 1
+	}
+
+	password, err := c.Ui.Ask("Password: ")
+
+	if err != nil {
+		c.Ui.Error(fmt.Sprintf("Error reading password from prompt: %s", err))
+		return 1
+	}
+
+	client, err := AuthenticatedSenseClient(false)
 
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Failed connecting to sense API: %s", err))
 		return 1
 	}
 
-	account, _, err := client.Account.Register()
+	reg := sense.NewRegistration(name, email, password)
+
+	account, _, err := client.Account.Register(reg)
 
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error registering account info: %s", err))
