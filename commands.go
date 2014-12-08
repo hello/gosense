@@ -35,6 +35,17 @@ func init() {
 				Ui: ui,
 			}, nil
 		},
+		"update": func() (cli.Command, error) {
+			return &command.UpdateAccountCommand{
+				Ui: ui,
+			}, nil
+		},
+
+		"upload": func() (cli.Command, error) {
+			return &command.UploadDataCommand{
+				Ui: ui,
+			}, nil
+		},
 		"version": func() (cli.Command, error) {
 			return &command.VersionCommand{
 				Version: Version,

@@ -27,7 +27,7 @@ func (s *TokenService) Login(username, password string) (AccessToken, *http.Resp
 	data.Set("username", username)
 	data.Set("password", password)
 	data.Set("grant_type", "password")
-	data.Set("client_id", "prototype")
+	data.Set("client_id", "iphone_pill")
 	data.Set("client_secret", "client_secret_here")
 
 	body := bytes.NewBufferString(data.Encode())

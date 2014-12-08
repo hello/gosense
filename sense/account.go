@@ -21,12 +21,13 @@ const (
 )
 
 type Account struct {
-	Name   string `json:"name,omitempty"`
-	Email  string `json:"email,omitempty"`
-	Gender Gender `json:"gender, omitempty"`
-	Height int32  `json:"height, omitempty"`
-	Weight int32  `json:"weight, omitempty"`
-	DOB    int64  `json:"dob, omitempty"`
+	Name         string `json:"name,omitempty"`
+	Email        string `json:"email,omitempty"`
+	Gender       Gender `json:"gender, omitempty"`
+	Height       int32  `json:"height, omitempty"`
+	Weight       int32  `json:"weight, omitempty"`
+	DOB          string `json:"dob, omitempty"`
+	LastModified int64  `json:"last_modified, omitempty"`
 }
 
 type Registration struct {
@@ -96,4 +97,32 @@ func (s *AccountService) Register(reg *Registration) (Account, *http.Response, e
 	}
 
 	return *account, resp, err
+}
+
+func (s *AccountService) Update(account *Account) (Account, *http.Response, error) {
+	// reg := &Registration{
+	// 	Name:     "tim",
+	// 	Email:    "blah@gmail.com",
+	// 	Password: "Oh yeah",
+	// 	Gender:   "OTHER",
+	// 	TimeZone: -252000,
+	// }
+
+	account_bytes, err := json.Marshal(account)
+	if err != nil {
+		return Account{}, nil, err
+	}
+
+	body := bytes.NewBuffer(account_bytes)
+	req, err := s.client.NewRequest("PUT", "v1/account", body)
+	req.Header.Del("Content-type")
+	req.Header.Add("Content-type", "application/json")
+
+	updated_account := new(Account)
+	resp, err := s.client.Do(req, updated_account)
+	if err != nil {
+		return Account{}, resp, err
+	}
+
+	return *updated_account, resp, err
 }

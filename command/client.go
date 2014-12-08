@@ -39,3 +39,8 @@ func AuthenticatedSenseClientWithTimeout(auth bool, timeout time.Duration) (*sen
 	}
 	return c, nil
 }
+
+func SenseProtobufClient() (*sense.SenseProtobufClient, error) {
+	c := sense.NewProtobufClient(nil, timeout)
+	return c, nil
+}
