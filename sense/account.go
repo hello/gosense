@@ -2,10 +2,14 @@ package sense
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	// "io/ioutil"
+	"crypto/hmac"
+	"crypto/sha256"
 	"net/http"
+	"net/url"
 )
 
 type AccountService struct {
@@ -66,6 +70,13 @@ func (s *AccountService) Me() (Account, *http.Response, error) {
 	return *account, resp, err
 }
 
+func ComputeHmac256(message string, secret string) string {
+	key := []byte(secret)
+	h := hmac.New(sha256.New, key)
+	h.Write([]byte(message))
+	return base64.StdEncoding.EncodeToString(h.Sum(nil))
+}
+
 func (s *AccountService) Register(reg *Registration) (Account, *http.Response, error) {
 	// reg := &Registration{
 	// 	Name:     "tim",
@@ -86,9 +97,12 @@ func (s *AccountService) Register(reg *Registration) (Account, *http.Response, e
 	// 	fmt.Println(err)
 	// }
 	// fmt.Println(string(b))
-	req, err := s.client.NewRequest("POST", "v1/account", body)
+
+	sig := fmt.Sprintf("?sig=%s", url.QueryEscape(ComputeHmac256("timtimtim", "hello")))
+	req, err := s.client.NewRequest("POST", "v1/account"+sig, body)
 	req.Header.Del("Content-type")
 	req.Header.Add("Content-type", "application/json")
+	req.Header.Add("Date", "Mon, 09 Sep 2011 23:36:00 GMT")
 
 	account := new(Account)
 	resp, err := s.client.Do(req, account)

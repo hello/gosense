@@ -18,6 +18,7 @@ import (
 
 const (
 	defaultBaseURL = "https://dev-api.hello.is/"
+	//defaultBaseURL = "http://localhost:9999/"
 	userAgent      = "gosense/0.1"
 )
 

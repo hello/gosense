@@ -11,6 +11,7 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/sha1"
+	"encoding/hex"
 	"errors"
 	"github.com/hello/sense/hello"
 	"io/ioutil"
@@ -23,6 +24,7 @@ import (
 
 const (
 	defaultServiceBaseURL = "https://dev-in.hello.is/"
+	// defaultServiceBaseURL = "http://localhost:5555/"
 )
 
 // A SenseClient manages communication with the Sense API.
@@ -37,7 +39,7 @@ type SenseProtobufClient struct {
 
 	// User agent used when communicating with the Sense API.
 	UserAgent string
-	AuthToken string
+	AESKey    string
 
 	Upload *UploadService
 }
@@ -73,7 +75,7 @@ func NewProtobufClient(httpClient *http.Client, timeout time.Duration) *SensePro
 // NewRequest creates an API request. A relative URL can be provided in urlStr,
 // in which case it is resolved relative to the BaseURL of the SenseClient.
 // Relative URLs should always be specified without a preceding slash.
-func (c *SenseProtobufClient) NewProtobufRequest(method, urlStr string, body []byte) (*http.Request, error) {
+func (c *SenseProtobufClient) NewProtobufRequest(method, urlStr string, body []byte, aesKey string) (*http.Request, error) {
 	rel, err := url.Parse(urlStr)
 	if err != nil {
 		return nil, err
@@ -82,14 +84,11 @@ func (c *SenseProtobufClient) NewProtobufRequest(method, urlStr string, body []b
 	log.Printf("Rel : %s\n", rel)
 
 	u := c.BaseURL.ResolveReference(rel)
+	keybytes, _ := hex.DecodeString(aesKey)
+	encoded_body, err := encode(body, keybytes)
 
-	encoded_body, err := encode(body, []byte("1234567891234567"))
-
-	// buff := new(bytes.Buffer)
-	// binary.Write(buff, binary.BigEndian, encoded_body)
 	buff := &bytes.Buffer{}
 	buff.Write(encoded_body)
-	// buff := bytes.NewBuffer(encoded_body)
 
 	req, err := http.NewRequest(method, u.String(), buff)
 	if err != nil {
@@ -107,7 +106,7 @@ func (c *SenseProtobufClient) NewProtobufRequest(method, urlStr string, body []b
 // error if an API error has occurred.  If v implements the io.Writer
 // interface, the raw response body will be written to v, without attempting to
 // first decode it.
-func (c *SenseProtobufClient) Do(req *http.Request) (*hello.SyncResponse, error) {
+func (c *SenseProtobufClient) Do(req *http.Request, aesKey string) (*hello.SyncResponse, error) {
 	resp, err := c.client.Do(req)
 	if err != nil {
 		log.Println("Do req failed")
@@ -126,8 +125,8 @@ func (c *SenseProtobufClient) Do(req *http.Request) (*hello.SyncResponse, error)
 		return response, err
 	}
 	buff, err := ioutil.ReadAll(resp.Body)
-
-	pb_resp, err := decode(buff, []byte("1234567891234567"))
+	keybytes, _ := hex.DecodeString(aesKey)
+	pb_resp, err := decode(buff, []byte(keybytes))
 
 	if err != nil {
 		log.Println("Decoding error")
@@ -150,7 +149,7 @@ func CheckProtobufResponse(r *http.Response) error {
 		return nil
 	}
 
-	log.Println("%d", r.StatusCode)
+	log.Printf("%d\n", r.StatusCode)
 	defer r.Body.Close()
 	data, _ := ioutil.ReadAll(r.Body)
 	return errors.New(string(data))
